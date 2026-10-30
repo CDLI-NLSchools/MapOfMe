@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Map of Me</title>
+<style>
+  :root{
+    --ink:#1c2430; --muted:#5a6572; --accent:#0b5cad; --accent-dark:#084a8a;
+    --card:#ffffff; --bg:#eef2f6; --line:#d4dce4; --soft:#f4f8fc; --starrow:#fdf6dd;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.45;}
+  .wrap{max-width:860px;margin:0 auto;padding:16px 14px 48px;}
+  header{margin:10px 0 6px;}
+  h1{font-size:1.7rem;margin:0 0 2px;}
+  h2{font-size:1.25rem;margin:0 0 4px;}
+  .subtitle{color:var(--muted);font-size:1rem;margin:0 0 10px;}
+  .intro{font-size:1.02rem;margin:0 0 4px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin:14px 0;box-shadow:0 1px 3px rgba(20,40,60,.06);}
+  .starter{color:var(--muted);margin:0 0 12px;}
+  .idearow{display:flex;gap:8px;align-items:center;margin:8px 0;}
+  .idearow input[type=text]{flex:1 1 auto;min-width:0;padding:9px 10px;font:inherit;font-size:1rem;
+    border:1px solid var(--line);border-radius:8px;min-height:44px;}
+  textarea{width:100%;padding:9px 10px;font:inherit;font-size:1rem;border:1px solid var(--line);
+    border-radius:8px;min-height:84px;resize:vertical;}
+  select{width:100%;padding:9px 10px;font:inherit;font-size:1rem;border:1px solid var(--line);
+    border-radius:8px;min-height:44px;background:#fff;margin:0 0 10px;}
+  button{cursor:pointer;font:inherit;border:1px solid var(--accent);background:var(--accent);color:#fff;
+    padding:9px 16px;border-radius:8px;min-height:44px;font-weight:600;}
+  button:hover{background:var(--accent-dark);}
+  button.secondary{background:#fff;color:var(--accent);}
+  button.secondary:hover{background:var(--soft);}
+  button.remove{background:#fff;color:#b3261e;border-color:#d8a49f;padding:9px 12px;flex:0 0 auto;}
+  button.remove:hover{background:#fdf2f1;}
+  button:disabled{opacity:.5;cursor:default;}
+  button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+    outline:3px solid #f2b01e;outline-offset:2px;}
+  .addrow{margin-top:10px;}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 0;}
+  .mapgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px;}
+  .trait{background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:6px;
+    font-weight:600;padding:12px 6px;min-height:64px;display:flex;align-items:center;justify-content:center;
+    text-align:center;flex-direction:column;gap:2px;}
+  .trait:hover{border-color:var(--accent);background:var(--soft);}
+  .trait .star{font-size:1.15rem;line-height:1;color:#d9a400;visibility:hidden;}
+  .trait[aria-pressed="true"]{background:var(--starrow);border-color:#d9a400;}
+  .trait[aria-pressed="true"] .star{visibility:visible;}
+  .mapcenter{display:flex;align-items:center;justify-content:center;text-align:center;
+    font-weight:700;font-size:1.15rem;background:var(--soft);border:2px solid var(--ink);border-radius:6px;
+    padding:12px 6px;min-height:64px;}
+  .uniquecell{border:2px solid var(--ink);border-radius:6px;padding:8px;display:flex;
+    flex-direction:column;gap:6px;justify-content:center;background:#fff;}
+  .uniquecell label{font-weight:600;font-size:.92rem;text-align:center;}
+  .uniquecell input{padding:8px;font:inherit;font-size:.95rem;border:1px solid var(--line);
+    border-radius:6px;min-height:40px;width:100%;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 4px;}
+  .chip{background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:999px;
+    padding:9px 14px;font-weight:600;min-height:44px;}
+  .chip:hover{border-color:var(--accent);}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .summary h2{margin-top:0;}
+  .summary h3{margin:16px 0 4px;font-size:1.05rem;}
+  .summary p.answer{margin:4px 0;white-space:pre-wrap;}
+  .summary ul{margin:4px 0 0;padding-left:22px;}
+  .summary li{margin:3px 0;}
+  .maplist{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0;padding:0;list-style:none;}
+  .maplist li{border:2px solid #d9a400;background:var(--starrow);border-radius:6px;
+    padding:6px 10px;font-weight:600;margin:0;}
+  .empty-note{color:var(--muted);font-style:italic;}
+  .copied{color:var(--accent-dark);font-weight:600;min-height:1.3em;margin:10px 0 0;}
+  .hidden{display:none !important;}
+  @media (max-width:700px){
+    .mapgrid{grid-template-columns:repeat(2,1fr);}
+    .mapcenter{grid-column:span 2;order:-1;}
+  }
+  @media (max-width:560px){
+    h1{font-size:1.4rem;}
+    button.remove span.word{display:none;}
+  }
+  @media print{
+    body{background:#fff;}
+    .no-print{display:none !important;}
+    .card{box-shadow:none;border-color:#999;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>The Map of Me</h1>
+    <p class="subtitle">Grade 9 STEAM, The Blueprint of Life, Lesson 1: Heredity and the Map of Me</p>
+    <p class="intro">Heredity: what features have you inherited? Build your map, then answer the questions that follow. Take your time: this map is about you. Your answers stay on this page and nothing is sent anywhere. When you finish, print or copy your map to keep it with your work.</p>
+  </header>
+
+  <main id="board">
+    <section class="card" aria-labelledby="h-map">
+      <h2 id="h-map">My inherited traits</h2>
+      <p class="starter">Select each trait that describes you to give it a star. Select it again to take the star away.</p>
+      <div class="mapgrid" id="mapGrid" role="group" aria-label="Trait map"></div>
+    </section>
+
+    <section class="card" data-rows="q1" aria-labelledby="h-q1">
+      <h2 id="h-q1">Question 1: Not inherited</h2>
+      <p class="starter">Name 5 things about yourself that you did NOT inherit and are not traits. For example: I have a sister, and I have 3 dogs. These are facts about me that are not inherited traits.</p>
+      <div class="ideas"></div>
+      <div class="addrow no-print">
+        <button type="button" class="secondary add-btn">Add another thing</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-q2">
+      <h2 id="h-q2">Question 2: Which are NOT traits?</h2>
+      <p class="starter">Which of the following are NOT traits? Select each one that is not a trait.</p>
+      <div class="chips" id="q2Chips" role="group" aria-label="Question 2 choices"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-q3">
+      <h2 id="h-q3">Question 3: Explain your thinking</h2>
+      <p class="starter">Choose one of the answers you selected in Question 2 and explain why it is not considered to be a trait.</p>
+      <label for="q3Select">The one I chose</label>
+      <select id="q3Select">
+        <option value="">Choose one...</option>
+      </select>
+      <label for="q3Text">Why it is not a trait</label>
+      <textarea id="q3Text" placeholder="Type your explanation..."></textarea>
+    </section>
+
+    <section class="card" aria-labelledby="h-q4">
+      <h2 id="h-q4">Question 4: Nature and nurture</h2>
+      <p class="starter">Talents like athletic ability or musical ability have a genetic component but also depend on nurture or your environment. Explain this statement.</p>
+      <label class="hidden" for="q4Text">Question 4 answer</label>
+      <textarea id="q4Text" placeholder="Type your answer..."></textarea>
+    </section>
+
+    <section class="card" aria-labelledby="h-q5">
+      <h2 id="h-q5">Question 5: What is a trait?</h2>
+      <p class="starter">Define trait, then give 3 examples of traits.</p>
+      <label for="q5Def">My definition of trait</label>
+      <textarea id="q5Def" placeholder="Type your definition..."></textarea>
+      <div data-rows="q5ex">
+        <div class="ideas"></div>
+        <div class="addrow no-print">
+          <button type="button" class="secondary add-btn">Add another example</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="actions no-print">
+      <button type="button" id="finishBtn">See my map</button>
+    </div>
+  </main>
+
+  <section class="card summary hidden" id="summary" aria-labelledby="h-summary">
+    <h2 id="h-summary">The Map of Me</h2>
+    <p class="subtitle">Grade 9 STEAM, The Blueprint of Life, Lesson 1: Heredity and the Map of Me</p>
+    <div id="summaryBody"></div>
+    <div class="actions no-print">
+      <button type="button" id="printBtn">Print</button>
+      <button type="button" class="secondary" id="copyBtn">Copy</button>
+      <button type="button" class="secondary" id="backBtn">Back to my map</button>
+    </div>
+    <p class="copied" id="copyNote" role="status" aria-live="polite"></p>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TRAITS = [
+    "Brown Hair", "Left Handed", "Oval Face Shape", "Detached Earlobes", "Dimples When I Smile",
+    "Curly Hair", "Right Handed", null, "Widow's Peak", "Black Hair",
+    "Allergies", "Green Eyes", "Blonde Hair", "Round Face Shape", "Freckles",
+    "UNIQUE", "Attached Earlobes", "Brown Eyes", "Straight Hair", "Blue Eyes"
+  ];
+
+  var Q2_OPTIONS = [
+    "The length of your hair",
+    "Your hair color",
+    "Your eye color",
+    "Knowing the digits of Pi",
+    "A scar on your hand",
+    "Speaking English and French languages"
+  ];
+
+  var mapGrid = document.getElementById("mapGrid");
+  var uniqueInput = null;
+
+  TRAITS.forEach(function (trait) {
+    if (trait === null) {
+      var center = document.createElement("div");
+      center.className = "mapcenter";
+      center.textContent = "The Map of Me";
+      mapGrid.appendChild(center);
+      return;
+    }
+    if (trait === "UNIQUE") {
+      var cell = document.createElement("div");
+      cell.className = "uniquecell";
+      var lab = document.createElement("label");
+      lab.setAttribute("for", "uniqueTrait");
+      lab.textContent = "A unique trait I have is";
+      uniqueInput = document.createElement("input");
+      uniqueInput.type = "text";
+      uniqueInput.id = "uniqueTrait";
+      uniqueInput.placeholder = "Type here...";
+      cell.appendChild(lab);
+      cell.appendChild(uniqueInput);
+      mapGrid.appendChild(cell);
+      return;
+    }
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "trait";
+    btn.setAttribute("aria-pressed", "false");
+    btn.setAttribute("data-trait", trait);
+    var star = document.createElement("span");
+    star.className = "star";
+    star.setAttribute("aria-hidden", "true");
+    star.textContent = "\u2605";
+    var name = document.createElement("span");
+    name.textContent = trait;
+    btn.appendChild(star);
+    btn.appendChild(name);
+    btn.addEventListener("click", function () {
+      var on = btn.getAttribute("aria-pressed") === "true";
+      btn.setAttribute("aria-pressed", on ? "false" : "true");
+    });
+    mapGrid.appendChild(btn);
+  });
+
+  var q2Chips = document.getElementById("q2Chips");
+  Q2_OPTIONS.forEach(function (opt) {
+    var chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.setAttribute("aria-pressed", "false");
+    chip.setAttribute("data-value", opt);
+    chip.textContent = opt;
+    chip.addEventListener("click", function () {
+      var on = chip.getAttribute("aria-pressed") === "true";
+      chip.setAttribute("aria-pressed", on ? "false" : "true");
+    });
+    q2Chips.appendChild(chip);
+  });
+
+  var q3Select = document.getElementById("q3Select");
+  Q2_OPTIONS.forEach(function (opt) {
+    var o = document.createElement("option");
+    o.value = opt;
+    o.textContent = opt;
+    q3Select.appendChild(o);
+  });
+
+  function makeRow(container, labelText) {
+    var row = document.createElement("div");
+    row.className = "idearow";
+    var input = document.createElement("input");
+    input.type = "text";
+    input.setAttribute("aria-label", labelText);
+    input.placeholder = "Type here...";
+    var remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove";
+    remove.innerHTML = "&#10005;<span class=\"word\"> Remove</span>";
+    remove.setAttribute("aria-label", "Remove this row");
+    remove.addEventListener("click", function () {
+      var rows = container.querySelectorAll(".idearow");
+      if (rows.length <= 1) { return; }
+      row.remove();
+      refreshRemoveButtons(container);
+    });
+    row.appendChild(input);
+    row.appendChild(remove);
+    return row;
+  }
+
+  function refreshRemoveButtons(container) {
+    var rows = container.querySelectorAll(".idearow");
+    var single = rows.length <= 1;
+    Array.prototype.forEach.call(container.querySelectorAll(".remove"), function (btn) {
+      btn.disabled = single;
+    });
+  }
+
+  function setupRows(container, count, labelText) {
+    var ideas = container.querySelector(".ideas");
+    for (var i = 0; i < count; i++) {
+      ideas.appendChild(makeRow(container, labelText));
+    }
+    refreshRemoveButtons(container);
+    container.querySelector(".add-btn").addEventListener("click", function () {
+      var row = makeRow(container, labelText);
+      ideas.appendChild(row);
+      refreshRemoveButtons(container);
+      row.querySelector("input").focus();
+    });
+  }
+
+  var q1Section = document.querySelector("[data-rows='q1']");
+  setupRows(q1Section, 5, "Something about me that is not an inherited trait");
+  var q5ex = document.querySelector("[data-rows='q5ex']");
+  setupRows(q5ex, 3, "Example of a trait");
+
+  function rowValues(container) {
+    var values = [];
+    Array.prototype.forEach.call(container.querySelectorAll(".idearow input"), function (input) {
+      var v = input.value.trim();
+      if (v) { values.push(v); }
+    });
+    return values;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+  }
+
+  function collectData() {
+    var starred = [];
+    Array.prototype.forEach.call(mapGrid.querySelectorAll(".trait"), function (btn) {
+      if (btn.getAttribute("aria-pressed") === "true") {
+        starred.push(btn.getAttribute("data-trait"));
+      }
+    });
+    var q2 = [];
+    Array.prototype.forEach.call(q2Chips.querySelectorAll(".chip"), function (chip) {
+      if (chip.getAttribute("aria-pressed") === "true") {
+        q2.push(chip.getAttribute("data-value"));
+      }
+    });
+    return {
+      starred: starred,
+      unique: uniqueInput.value.trim(),
+      q1: rowValues(q1Section),
+      q2: q2,
+      q3choice: q3Select.value,
+      q3text: document.getElementById("q3Text").value.trim(),
+      q4: document.getElementById("q4Text").value.trim(),
+      q5def: document.getElementById("q5Def").value.trim(),
+      q5examples: rowValues(q5ex)
+    };
+  }
+
+  function listHtml(items, emptyText) {
+    if (!items.length) { return "<p class=\"empty-note\">" + emptyText + "</p>"; }
+    var html = "<ul>";
+    items.forEach(function (item) { html += "<li>" + escapeHtml(item) + "</li>"; });
+    return html + "</ul>";
+  }
+
+  function answerHtml(text, emptyText) {
+    if (!text) { return "<p class=\"empty-note\">" + emptyText + "</p>"; }
+    return "<p class=\"answer\">" + escapeHtml(text) + "</p>";
+  }
+
+  function compileSummaryHtml(data) {
+    var html = "";
+    html += "<h3>My inherited traits</h3>";
+    if (data.starred.length) {
+      html += "<ul class=\"maplist\">";
+      data.starred.forEach(function (t) { html += "<li>\u2605 " + escapeHtml(t) + "</li>"; });
+      html += "</ul>";
+    } else {
+      html += "<p class=\"empty-note\">No traits starred yet.</p>";
+    }
+    html += "<h3>A unique trait I have</h3>";
+    html += answerHtml(data.unique, "Nothing added yet.");
+    html += "<h3>Question 1: Things about me that are not inherited traits</h3>";
+    html += listHtml(data.q1, "Nothing added yet.");
+    html += "<h3>Question 2: The ones I picked as NOT traits</h3>";
+    html += listHtml(data.q2, "Nothing selected yet.");
+    html += "<h3>Question 3: Why it is not a trait</h3>";
+    if (data.q3choice) {
+      html += "<p class=\"answer\"><strong>" + escapeHtml(data.q3choice) + "</strong></p>";
+    }
+    html += answerHtml(data.q3text, "Nothing added yet.");
+    html += "<h3>Question 4: Nature and nurture</h3>";
+    html += answerHtml(data.q4, "Nothing added yet.");
+    html += "<h3>Question 5: What is a trait?</h3>";
+    html += "<p class=\"answer\"><strong>My definition:</strong></p>";
+    html += answerHtml(data.q5def, "Nothing added yet.");
+    html += "<p class=\"answer\"><strong>My examples:</strong></p>";
+    html += listHtml(data.q5examples, "No examples added yet.");
+    return html;
+  }
+
+  function compileSummaryText(data) {
+    var lines = ["The Map of Me", "Grade 9 STEAM, The Blueprint of Life, Lesson 1: Heredity and the Map of Me", ""];
+    function block(title, items, emptyText) {
+      lines.push(title);
+      if (items.length) {
+        items.forEach(function (item) { lines.push("- " + item); });
+      } else {
+        lines.push("(" + emptyText + ")");
+      }
+      lines.push("");
+    }
+    block("My inherited traits", data.starred, "No traits starred yet.");
+    lines.push("A unique trait I have");
+    lines.push(data.unique || "(Nothing added yet.)");
+    lines.push("");
+    block("Question 1: Things about me that are not inherited traits", data.q1, "Nothing added yet.");
+    block("Question 2: The ones I picked as NOT traits", data.q2, "Nothing selected yet.");
+    lines.push("Question 3: Why it is not a trait");
+    if (data.q3choice) { lines.push("I chose: " + data.q3choice); }
+    lines.push(data.q3text || "(Nothing added yet.)");
+    lines.push("");
+    lines.push("Question 4: Nature and nurture");
+    lines.push(data.q4 || "(Nothing added yet.)");
+    lines.push("");
+    lines.push("Question 5: What is a trait?");
+    lines.push("Definition: " + (data.q5def || "(Nothing added yet.)"));
+    if (data.q5examples.length) {
+      data.q5examples.forEach(function (e) { lines.push("- " + e); });
+    } else {
+      lines.push("(No examples added yet.)");
+    }
+    lines.push("");
+    return lines.join("\n");
+  }
+
+  var board = document.getElementById("board");
+  var summary = document.getElementById("summary");
+  var summaryBody = document.getElementById("summaryBody");
+  var copyNote = document.getElementById("copyNote");
+  var lastData = null;
+
+  document.getElementById("finishBtn").addEventListener("click", function () {
+    lastData = collectData();
+    summaryBody.innerHTML = compileSummaryHtml(lastData);
+    copyNote.textContent = "";
+    board.classList.add("hidden");
+    summary.classList.remove("hidden");
+    document.getElementById("printBtn").focus();
+    window.scrollTo(0, 0);
+  });
+
+  document.getElementById("backBtn").addEventListener("click", function () {
+    summary.classList.add("hidden");
+    board.classList.remove("hidden");
+    document.getElementById("finishBtn").focus();
+    window.scrollTo(0, 0);
+  });
+
+  document.getElementById("printBtn").addEventListener("click", function () {
+    window.print();
+  });
+
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var text = compileSummaryText(lastData || collectData());
+    function done(ok) {
+      copyNote.textContent = ok ? "Copied. You can paste your map wherever you keep your work."
+                                : "Copy did not work in this browser. You can print instead.";
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { fallback(); });
+    } else {
+      fallback();
+    }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      ta.remove();
+      done(ok);
+    }
+  });
+})();
+</script>
+</body>
+</html>
